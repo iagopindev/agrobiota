@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitas Técnicas · Conilon — Painel</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f5f5f7;--card:#ffffff;--ink:#1d1d1f;--ink2:#424245;--mut:#86868b;--line:#e8e8ed;
+  --blue:#0071e3;--green:#34c759;--orange:#ff9f0a;--red:#ff3b30;--indigo:#5e5ce6;--teal:#30b0c7;--brown:#a2845e;--gray:#aeaeb2;
+  --r:20px;--sh:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:-.01em}
+button{font-family:inherit}
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;background:rgba(245,245,247,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.06)}
+.bar-in{max-width:1280px;margin:auto;padding:12px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;margin-right:auto}
+.brand i{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#6b4f3a,#a2845e);display:inline-block}
+.sel{appearance:none;border:1px solid var(--line);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2386868b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;border-radius:980px;padding:7px 32px 7px 14px;font-size:13px;color:var(--ink);cursor:pointer}
+.btn{border:0;border-radius:980px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:.2s}
+.btn.p{background:var(--blue);color:#fff}.btn.p:hover{background:#0077ed}
+.btn.g{background:#e8e8ed;color:var(--ink)}.btn.g:hover{background:#dcdce1}
+/* segmented nav */
+.seg-wrap{max-width:1280px;margin:auto;padding:0 28px 12px;overflow-x:auto}
+.seg{display:inline-flex;background:#e3e3e8;border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:7px 16px;border-radius:9px;font-size:13px;color:var(--ink2);cursor:pointer;white-space:nowrap;transition:.2s}
+.seg button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+main{max-width:1280px;margin:auto;padding:28px}
+h1.hero{font-size:44px;font-weight:700;letter-spacing:-.03em;margin:8px 0 6px}
+p.lead{font-size:19px;color:var(--mut);margin:0 0 28px;max-width:760px;line-height:1.4}
+h2{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:6px 0 4px}
+.h2sub{color:var(--mut);font-size:15px;margin:0 0 22px}
+/* upload */
+.drop{background:#fff;border-radius:28px;box-shadow:var(--sh);padding:64px 32px;text-align:center;border:2px dashed transparent;transition:.25s;cursor:pointer}
+.drop.over{border-color:var(--blue);background:#f0f7ff}
+.drop .ic{width:64px;height:64px;margin:0 auto 18px;border-radius:18px;background:linear-gradient(135deg,#0071e3,#5e5ce6);display:grid;place-items:center}
+.drop h3{font-size:22px;margin:0 0 6px;font-weight:600}.drop p{color:var(--mut);margin:0 0 20px}
+.req{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:22px}
+.req span{font-size:12px;background:#f5f5f7;border-radius:980px;padding:5px 12px;color:var(--ink2)}
+.msg{margin-top:16px;font-size:14px}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh)}
+.kpi .l{font-size:12.5px;color:var(--mut);font-weight:500}
+.kpi .v{font-size:34px;font-weight:700;letter-spacing:-.03em;margin:6px 0 2px;display:flex;align-items:baseline;gap:6px}
+.kpi .v small{font-size:15px;color:var(--mut);font-weight:500}
+.kpi .s{font-size:12px;color:var(--mut)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:18px}
+.card{background:var(--card);border-radius:var(--r);padding:22px 24px;box-shadow:var(--sh);margin-bottom:18px;position:relative}
+.card h3{font-size:17px;font-weight:600;margin:0 0 3px;letter-spacing:-.01em;padding-right:40px}
+.card .sub{font-size:13px;color:var(--mut);margin-bottom:14px}
+.ch{position:relative;height:300px}.ch.t{height:380px}
+.dl{position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:50%;border:0;background:#f5f5f7;cursor:pointer;display:grid;place-items:center;transition:.2s}
+.dl:hover{background:#e8e8ed}
+.dl svg{width:15px;height:15px}
+/* insights */
+.ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-bottom:22px}
+.in{background:#fff;border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);border-top:4px solid var(--blue)}
+.in.r{border-color:var(--red)}.in.o{border-color:var(--orange)}.in.g{border-color:var(--green)}
+.in b{display:block;font-size:15px;margin-bottom:6px}.in p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.5}
+/* table */
+.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.inp{border:1px solid var(--line);border-radius:980px;padding:8px 16px;font-size:13px;min-width:260px;outline:none}
+.inp:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(0,113,227,.12)}
+.tbl{max-height:520px;overflow:auto;border-radius:14px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:#fafafa;text-align:left;font-weight:600;color:var(--ink2);padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f3;vertical-align:top;color:var(--ink2)}
+tr:hover td{background:#fafafc}
+.pill{display:inline-block;border-radius:980px;padding:3px 10px;font-size:11.5px;font-weight:600}
+.pill.Alta{background:#ffe5e3;color:#d70015}.pill.Média{background:#fff2dc;color:#c26c00}.pill.Baixa{background:#ececf0;color:#6e6e73}
+.note{font-size:13px;color:var(--mut);background:#fff;border-radius:14px;padding:12px 16px;margin-bottom:18px;box-shadow:var(--sh)}
+.tab{display:none;animation:f .35s ease}.tab.on{display:block}
+@keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.hidden{display:none!important}
+footer{max-width:1280px;margin:auto;padding:10px 28px 40px;color:var(--mut);font-size:12px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}h1.hero{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="bar-in">
+    <div class="brand"><i></i>Visitas Técnicas · Conilon</div>
+    <span id="fileInfo" style="font-size:12px;color:var(--mut)"></span>
+    <select class="sel hidden" id="fCons"></select>
+    <select class="sel hidden" id="fMes"></select>
+    <button class="btn g hidden" id="bAll">Baixar todos os gráficos</button>
+    <button class="btn p" id="bUp">Carregar planilha</button>
+    <input type="file" id="file" accept=".xlsx,.xls" hidden>
+  </div>
+  <div class="seg-wrap hidden" id="segWrap"><div class="seg" id="seg"></div></div>
+</div>
+
+<main>
+<!-- UPLOAD -->
+<section id="up">
+  <h1 class="hero">Gestão técnica, em um olhar.</h1>
+  <p class="lead">Carregue o consolidado de relatórios de visita. O painel calcula adesão, execução nutricional, fitossanidade, qualidade do dado e evidências — e monta o plano de ação. Nada sai do seu computador.</p>
+  <div class="drop" id="drop">
+    <div class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg></div>
+    <h3>Arraste a planilha aqui</h3>
+    <p>ou clique para selecionar um arquivo .xlsx</p>
+    <button class="btn p" type="button">Escolher arquivo</button>
+    <div class="req" id="req"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+</section>
+
+<!-- 0 VISÃO GERAL -->
+<section class="tab" id="t0">
+  <h2>Visão geral</h2><p class="h2sub" id="sub0"></p>
+  <div class="kpis" id="k0"></div>
+  <div class="ins" id="ins0"></div>
+  <div class="grid">
+    <div class="card"><h3>Visitas por mês</h3><div class="sub">Empilhado por consultor</div><div class="ch"><canvas id="cVisMes"></canvas></div></div>
+    <div class="card"><h3>Ocorrências de campo</h3><div class="sub">Categorias registradas nas observações</div><div class="ch"><canvas id="cCat"></canvas></div></div>
+    <div class="card"><h3>Cobertura da carteira</h3><div class="sub">Fazendas atendidas e visitas por fazenda</div><div class="ch"><canvas id="cCob"></canvas></div></div>
+    <div class="card"><h3>Retrabalho de relatórios</h3><div class="sub">Relatórios editados após o envio (v2+)</div><div class="ch"><canvas id="cVer"></canvas></div></div>
+  </div>
+</section>
+
+<!-- 1 ADESÃO -->
+<section class="tab" id="t1">
+  <h2>Adesão e execução</h2><p class="h2sub">O que foi recomendado na visita anterior e o que de fato foi feito.</p>
+  <div class="kpis" id="k1"></div>
+  <div class="grid">
+    <div class="card"><h3>Adesão efetiva por tipo</h3><div class="sub">% das recomendações executadas, por consultor</div><div class="ch"><canvas id="cAdTipo"></canvas></div></div>
+    <div class="card"><h3>Precisão da dose</h3><div class="sub">Dose aplicada ÷ recomendada (nutrição e defensivos)</div><div class="ch"><canvas id="cRazao"></canvas></div></div>
+    <div class="card"><h3>Entrega de nutrientes</h3><div class="sub">Recomendado × aplicado (kg/ha somados) – N, P₂O₅, K₂O</div><div class="ch"><canvas id="cEntrega"></canvas></div></div>
+    <div class="card"><h3>Itens não executados</h3><div class="sub">Produtos com “Seguiu = Não”</div><div class="ch"><canvas id="cNaoExec"></canvas></div></div>
+  </div>
+  <div class="card"><h3>Maiores desvios de dose</h3><div class="sub">Execuções com ≥150% ou ≤50% do recomendado</div><div class="tbl"><table id="tbDesv"></table></div></div>
+</section>
+
+<!-- 2 NUTRIÇÃO -->
+<section class="tab" id="t2">
+  <h2>Nutrição</h2><p class="h2sub">Equilíbrio das recomendações e sinais nutricionais observados em campo.</p>
+  <div class="kpis" id="k2"></div>
+  <div class="grid">
+    <div class="card"><h3>Equilíbrio N × K₂O</h3><div class="sub">Cada ponto é um relatório · linha tracejada = 1:1</div><div class="ch t"><canvas id="cNK"></canvas></div></div>
+    <div class="card"><h3>Deficiências citadas</h3><div class="sub">Menções em observações de campo</div><div class="ch t"><canvas id="cDef"></canvas></div></div>
+    <div class="card"><h3>NPK médio recomendado</h3><div class="sub">kg/ha por relatório, por mês</div><div class="ch"><canvas id="cNPKm"></canvas></div></div>
+    <div class="card"><h3>Fertilizantes mais recomendados</h3><div class="sub">Número de recomendações</div><div class="ch"><canvas id="cFert"></canvas></div></div>
+  </div>
+</section>
+
+<!-- 3 FITO -->
+<section class="tab" id="t3">
+  <h2>Fitossanidade</h2><p class="h2sub">Pressão de pragas e doenças e perfil dos ativos recomendados.</p>
+  <div class="kpis" id="k3"></div>
+  <div class="ins" id="ins3"></div>
+  <div class="grid">
+    <div class="card"><h3>Pragas e doenças</h3><div class="sub">Menções nas observações</div><div class="ch t"><canvas id="cPrag"></canvas></div></div>
+    <div class="card"><h3>Ativos recomendados</h3><div class="sub">Vermelho = ativo restrito / em eliminação</div><div class="ch t"><canvas id="cAtiv"></canvas></div></div>
+  </div>
+</section>
+
+<!-- 4 QUALIDADE -->
+<section class="tab" id="t4">
+  <h2>Qualidade do dado</h2><p class="h2sub">Inconsistências detectadas automaticamente por regras de negócio.</p>
+  <div class="kpis" id="k4"></div>
+  <div class="ins" id="ins4"></div>
+  <div class="grid">
+    <div class="card"><h3>Inconsistências por tipo</h3><div class="sub">Empilhado por severidade</div><div class="ch"><canvas id="cIssT"></canvas></div></div>
+    <div class="card"><h3>Apontamentos por relatório</h3><div class="sub">Média por consultor – leitura de processo, não de desempenho</div><div class="ch"><canvas id="cIssC"></canvas></div></div>
+  </div>
+  <div class="card"><h3>Lista de inconsistências</h3>
+    <div class="tools"><input class="inp" id="qIss" placeholder="Buscar fazenda, tipo ou detalhe"><select class="sel" id="sIss"><option value="">Todas as severidades</option><option>Alta</option><option>Média</option><option>Baixa</option></select><select class="sel" id="tIss"></select><button class="btn g" id="bCsv">Exportar CSV</button></div>
+    <div class="tbl"><table id="tbIss"></table></div></div>
+</section>
+
+<!-- 5 EVIDÊNCIAS -->
+<section class="tab" id="t5">
+  <h2>Evidências</h2><p class="h2sub">Rastreabilidade fotográfica das visitas.</p>
+  <div class="kpis" id="k5"></div>
+  <div class="grid">
+    <div class="card"><h3>Geolocalização das fotos</h3><div class="sub">% de relatórios por situação de GPS</div><div class="ch"><canvas id="cGps"></canvas></div></div>
+    <div class="card"><h3>Tempo até o envio</h3><div class="sub">Dias entre a visita e a primeira foto</div><div class="ch"><canvas id="cLag"></canvas></div></div>
+  </div>
+</section>
+
+<!-- 6 PLANO -->
+<section class="tab" id="t6">
+  <h2>Plano de ação</h2><p class="h2sub">Gerado a partir dos gatilhos encontrados nesta planilha · formato 5W2H.</p>
+  <div class="card"><div class="tbl" style="max-height:none"><table id="tbPA"></table></div></div>
+  <div class="card"><h3>Scorecard mensal</h3><div class="sub">Valor atual × meta</div><div class="tbl" style="max-height:none"><table id="tbMeta"></table></div></div>
+</section>
+</main>
+<footer id="foot">Processamento local no navegador · gráficos exportáveis em PNG.</footer>
+
+<script>
+/* ================= CONFIG ================= */
+const SHEETS={Cabecalhos:true,Observacoes:false,Nutricao_Recomendada:false,Nutricao_Aplicada:false,CPD:false,Herbicidas:false,Adesao:false,Evidencias:false};
+const MESN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESFULL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const RESTRITOS=[[/clorpir/i,'Clorpirifós – Anexo A (eliminação) da Convenção de Estocolmo; café fora das exceções agrícolas'],[/carbofuran/i,'Carbofurano – proibido no Brasil'],[/paraquat/i,'Paraquate – proibido no Brasil']];
+const PRAGAS={'Ácaro-vermelho':/[áa]caro/i,'Broca-do-café':/broca[- ]d[oe]s?[- ]?(caf|fruto)|grão com perfura/i,'Broca-da-haste':/broca d[ae] ?h?aste|broca da ahste/i,'Bicho-mineiro':/bicho[- ]mineiro/i,'Ferrugem':/ferrugem/i,'Fusariose':/fusari/i,'Mancha aureolada':/aur?eolada|aoreolada/i,'Phoma':/phoma/i,'Cercosporiose':/cercosp/i,'Cochonilha':/cochonilha/i,'Lagartas':/lagart/i};
+const DEFS={N:/\bN\b|nitrog/,P:/\bP\b|f[óo]sfor/i,K:/\bK\b|pot[áa]ssio/i,Ca:/\bCa\b|c[áa]lcio/i,Mg:/\bMg\b|magn[ée]sio/i,B:/\bB\b|boro\b/i,Zn:/\bZn\b|zinco/i,Mn:/\bMn\b|mangan/i,Fe:/\bFe\b|ferro\b/i,Cu:/\bCu\b|cobre/i,S:/\bS\b|enxofre/i};
+const C={blue:'#0071e3',green:'#34c759',orange:'#ff9f0a',red:'#ff3b30',indigo:'#5e5ce6',teal:'#30b0c7',brown:'#a2845e',gray:'#c7c7cc',pink:'#ff2d55'};
+const PAL=[C.blue,C.green,C.orange,C.indigo,C.teal,C.brown,C.pink,C.red];
+document.getElementById('req').innerHTML=Object.entries(SHEETS).map(([k,v])=>`<span>${k}${v?' *':''}</span>`).join('');
+
+/* ================= CHART DEFAULTS ================= */
+Chart.defaults.font.family='-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,"Segoe UI",Roboto,Arial,sans-serif';
+Chart.defaults.font.size=12;Chart.defaults.color='#86868b';
+Chart.defaults.plugins.legend.labels.usePointStyle=true;Chart.defaults.plugins.legend.labels.pointStyle='circle';Chart.defaults.plugins.legend.labels.boxWidth=7;Chart.defaults.plugins.legend.labels.boxHeight=7;
+Chart.defaults.plugins.legend.position='bottom';
+Chart.defaults.plugins.tooltip.backgroundColor='rgba(29,29,31,.92)';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.cornerRadius=10;
+Chart.defaults.elements.bar.borderRadius=6;Chart.defaults.elements.bar.borderSkipped=false;
+Chart.defaults.scale.grid.color='#f0f0f3';Chart.defaults.scale.border={display:false};
+Chart.defaults.datasets.bar.maxBarThickness=34;
+const bgPlugin={id:'bg',beforeDraw(c){const x=c.ctx;x.save();x.globalCompositeOperation='destination-over';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.restore();}};
+Chart.register(bgPlugin);
+
+/* ================= HELPERS ================= */
+const $=id=>document.getElementById(id);
+const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function get(r,...names){for(const n of names){const k=Object.keys(r).find(k=>norm(k)==norm(n));if(k!==undefined&&r[k]!==''&&r[k]!=null)return r[k];}return null;}
+const blank=v=>v==null||['','—','-','–'].includes(String(v).trim());
+const num=v=>{if(v==null||v==='')return null;if(typeof v=='number')return v;const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n;};
+function pdate(v){if(v==null||v==='')return null;if(v instanceof Date)return v;if(typeof v=='number'){return new Date(Math.round((v-25569)*864e5)+new Date().getTimezoneOffset()*6e4);}
+ const m=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);if(m)return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0));const d=new Date(v);return isNaN(d)?null:d;}
+const pct=(a,b)=>b?Math.round(a/b*100):0;const fmt=(n,d=1)=>(n??0).toLocaleString('pt-BR',{maximumFractionDigits:d});
+const sum=(a,k)=>a.reduce((s,x)=>s+(x[k]||0),0);const avg=(a,k)=>{const v=a.filter(x=>x[k]!=null);return v.length?sum(v,k)/v.length:0};
+const med=v=>{if(!v.length)return 0;const s=[...v].sort((a,b)=>a-b),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+const cnt=(arr,fn)=>arr.reduce((o,x)=>{let k=fn(x);(Array.isArray(k)?k:[k]).forEach(z=>{if(z!=null&&z!=='')o[z]=(o[z]||0)+1});return o},{});
+const topN=(o,n=12)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const short=(s,n=46)=>{s=String(s);return s.length>n?s.slice(0,n-1)+'…':s};
+
+/* ================= LOAD ================= */
+const drop=$('drop'),fi=$('file');
+drop.onclick=()=>fi.click();$('bUp').onclick=()=>fi.click();
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0];if(f)readFile(f)});
+fi.onchange=()=>{if(fi.files[0])readFile(fi.files[0]);fi.value=''};
+function readFile(f){
+ $('msg').innerHTML='<span style="color:var(--mut)">Lendo planilha…</span>';
+ const rd=new FileReader();
+ rd.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+   const sh={};wb.SheetNames.forEach(n=>sh[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:null,raw:true}));
+   loadSheets(sh,f.name);}catch(err){$('msg').innerHTML=`<span style="color:var(--red)">Não foi possível ler o arquivo: ${esc(err.message)}</span>`;}};
+ rd.readAsArrayBuffer(f);
+}
+let D=null;
+function loadSheets(raw,fname){
+ const pick=n=>{const k=Object.keys(raw).find(k=>norm(k)==norm(n));return k?raw[k]:null};
+ const miss=Object.keys(SHEETS).filter(n=>!pick(n));
+ if(!pick('Cabecalhos')){ $('msg').innerHTML=`<span style="color:var(--red)">Aba obrigatória “Cabecalhos” não encontrada. Abas lidas: ${esc(Object.keys(raw).join(', '))}</span>`;$('up').classList.remove('hidden');return;}
+ D=build(Object.fromEntries(Object.keys(SHEETS).map(n=>[n,pick(n)||[]])));
+ D.miss=miss;D.fname=fname;
+ $('fileInfo').textContent=fname+(miss.length?` · abas ausentes: ${miss.join(', ')}`:'');
+ $('up').classList.add('hidden');['fCons','fMes','bAll','segWrap'].forEach(i=>$(i).classList.remove('hidden'));
+ $('bUp').textContent='Trocar planilha';
+ $('fCons').innerHTML='<option value="">Todos os consultores</option>'+D.cons.map(c=>`<option>${esc(c)}</option>`).join('');
+ $('fMes').innerHTML='<option value="">Todos os meses</option>'+D.meses.map(m=>`<option>${m}</option>`).join('');
+ go(0);render();
+}
+window.loadSheets=loadSheets;
+
+/* ================= BUILD / ANALYSE ================= */
+function build(S){
+ const iss=[];const reps=[];const byId={};
+ // headers
+ S.Cabecalhos.forEach(r=>{
+  const id=get(r,'Relatorio');if(!id)return;const dt=pdate(get(r,'DataHora','Data'));
+  const fz=String(get(r,'Fazenda')||'');const parts=fz.split(' - ');const tal=get(r,'Talhao');
+  const ham=String(tal??'').match(/\(([\d.,]+)\s*ha\)\s*$/i);
+  const o={id:String(id),faz:parts.length>1?parts.slice(1).join(' - '):fz,prod:parts[0],fazKey:fz,cons:String(get(r,'Consultor')||'—').trim(),dt,mes:dt?MESN[dt.getMonth()]:'—',mi:dt?dt.getFullYear()*12+dt.getMonth():0,
+   tal:blank(tal)?'':String(tal),ha:ham?num(ham[1]):null,ver:parseInt(String(get(r,'Versao')||'v1').replace(/\D/g,''))||1,tipo:get(r,'Tipo_adubacao'),
+   resp:get(r,'Responsavel'),mot:get(r,'Motivo'),obsN:get(r,'Obs_nutricao'),obsC:get(r,'Obs_cpd'),obsH:get(r,'Obs_herb'),nf:0,ngps:0,gs:0,lag:null,N:null,P:null,K:null};
+  reps.push(o);byId[o.id]=o;});
+ const add=(id,sev,tipo,det)=>{const r=byId[id];if(r)iss.push({id,faz:r.faz,cons:r.cons,mes:r.mes,sev,tipo,det});};
+ const withRep=arr=>arr.map(r=>{const id=String(get(r,'Relatorio')||'');const h=byId[id];return h?{r,id,h}:null}).filter(Boolean);
+ // header rules
+ reps.forEach(r=>{
+  if(!r.tal||r.ha==null)add(r.id,'Alta','Cadastro','Talhão ou área (ha) não informado');
+  if(blank(r.tipo))add(r.id,'Média','Cadastro','Tipo de adubação não informado');
+  if(blank(r.resp))add(r.id,'Baixa','Cadastro','Responsável/acompanhante não informado');
+  if(blank(r.mot))add(r.id,'Média','Cadastro','Motivo/objetivo da visita não informado');
+  if(blank(r.obsN))add(r.id,'Média','Nutrição','Observação de nutrição em branco');
+  if(r.dt&&r.dt.getHours()<5)add(r.id,'Baixa','Cadastro',`Horário atípico (${String(r.dt.getHours()).padStart(2,'0')}:${String(r.dt.getMinutes()).padStart(2,'0')}) – provável lançamento posterior`);
+  const txt=[r.obsN,r.obsC,r.obsH,r.mot].filter(x=>!blank(x)).join(' ');
+  if(/talh[aã]o (total|inteiro)|todo o (setor|talh)|[áa]rea total|kg\/talh|por talh[aã]o/i.test(txt))add(r.id,'Alta','Unidade','Dose expressa por talhão/setor, não em kg/ha');
+  if(/\d\s*kpa\b/i.test(txt))add(r.id,'Média','Irrigação','Pressão registrada em kPa – unidade incoerente para gotejamento (provável bar/mca)');
+  if(/duplicad|data errada/i.test(txt))add(r.id,'Alta','Duplicidade','Texto indica relatório duplicado ou salvo com data errada');
+  if(r.dt){const ms=[...txt.toLowerCase().matchAll(/m[eê]s de (\w+ç?\w*)/g)].map(m=>MESFULL.indexOf(m[1])).filter(i=>i>=0);
+   ms.forEach(i=>{let d=r.dt.getMonth()-i;if(d<0)d+=12;if(d>=3&&d<=9)add(r.id,'Média','Coerência temporal',`Texto cita “${MESFULL[i]}” em visita de ${MESFULL[r.dt.getMonth()]}`)});}
+ });
+ // observations
+ const obs=withRep(S.Observacoes).map(({r,id,h})=>{const cat=String(get(r,'Categoria')||'Sem categoria');const t=String(get(r,'Observado','Observacao','Descricao')||'');
+   if(blank(t)&&!/nenhum problema/i.test(cat))add(id,'Baixa','Cadastro',`Categoria “${cat}” marcada sem descrição`);
+   return{id,cons:h.cons,mes:h.mes,cat,pr:/praga|doen/i.test(cat)?Object.keys(PRAGAS).filter(k=>PRAGAS[k].test(t)):[],df:/defici/i.test(cat)?Object.keys(DEFS).filter(k=>DEFS[k].test(t)):[]};});
+ // recommended nutrition
+ const NR=withRep(S.Nutricao_Recomendada).map(({r,id,h})=>({id,h,fert:String(get(r,'Fertilizante','Fertilizante_recomendado')||''),dose:num(get(r,'Dose_kg_ha','Dose')),N:num(get(r,'N_kg_ha'))||0,P:num(get(r,'P2O5_kg_ha'))||0,K:num(get(r,'K2O_kg_ha'))||0}));
+ const fac={};NR.forEach(x=>{if(x.dose>0){(fac[x.fert]=fac[x.fert]||[]).push([x.N/x.dose,x.P/x.dose,x.K/x.dose])}});
+ Object.keys(fac).forEach(k=>{const a=fac[k];fac[k]=[0,1,2].map(i=>med(a.map(z=>z[i])))});
+ const F=p=>{p=String(p||'');if(fac[p])return fac[p];const m=p.match(/(\d{1,2})-(\d{1,2})-(\d{1,2})/);return m?[+m[1]/100,+m[2]/100,+m[3]/100]:[0,0,0]};
+ const seen={};
+ NR.forEach(x=>{const h=x.h;h.N=(h.N||0)+x.N;h.P=(h.P||0)+x.P;h.K=(h.K||0)+x.K;
+  if(!x.dose)add(x.id,'Média','Nutrição',`Recomendação com dose zero/vazia: ${x.fert}`);
+  const k=x.id+'|'+x.fert+'|'+x.dose;if(seen[k])add(x.id,'Média','Duplicidade',`Linha repetida na recomendação: ${x.fert} ${x.dose} kg/ha`);seen[k]=1;
+  if(x.N>150||x.K>150)add(x.id,'Alta','Nutrição',`${x.fert} ${fmt(x.dose,0)} kg/ha num único registro (${fmt(x.N,0)} N / ${fmt(x.K,0)} K₂O kg/ha) – confirmar parcelamento`);});
+ // applied nutrition
+ withRep(S.Nutricao_Aplicada).forEach(({r,id})=>{const f=String(get(r,'Fertilizante_aplicado','Fertilizante')||'');const d=num(get(r,'Dose_kg_ha','Dose'));
+  const n=(num(get(r,'N_kg_ha'))||0)+(num(get(r,'P2O5_kg_ha'))||0)+(num(get(r,'K2O_kg_ha'))||0);const g=F(f);
+  if(d>0&&n===0&&(g[0]+g[1]+g[2])>0)add(id,'Alta','Cálculo',`“${f}” aplicado ${d} kg/ha com N-P-K calculado = 0`);
+  if(d==null)add(id,'Média','Execução',`Aplicação sem dose: ${f}`);});
+ // CPD + herb
+ const cpd=withRep(S.CPD).map(({r,id,h})=>({id,cons:h.cons,mes:h.mes,at:String(get(r,'Defensivo','Produto','Ativo')||'—'),d:num(get(r,'Dose')),u:String(get(r,'Unidade')||'')}));
+ const herb=withRep(S.Herbicidas).map(({r,id,h})=>({id,cons:h.cons,mes:h.mes,at:String(get(r,'Herbicida','Produto','Ativo')||'—'),d:num(get(r,'Dose')),u:String(get(r,'Unidade')||'')}));
+ [...cpd,...herb].forEach(x=>{if(!x.d)add(x.id,'Média','Defensivos',`Defensivo com dose zero/vazia: ${x.at}`);
+  if(x.d>=20)add(x.id,'Alta','Defensivos',`Dose implausível: ${x.at} ${x.d} ${x.u} (provável mL→L ou g→kg)`);
+  RESTRITOS.forEach(([re,t])=>{if(re.test(x.at))add(x.id,'Alta','Conformidade',`Ativo restrito recomendado (${x.d??''} ${x.u}): ${t}`)});});
+ // adesao
+ let unitNut=0,nutSim=0,unitAc=0;
+ const ad=withRep(S.Adesao).map(({r,id,h})=>{
+  const tipo=String(get(r,'Tipo')||'').toLowerCase();const rec=String(get(r,'Recomendacao')||'');
+  const prod=rec.split(' — ')[0].trim();const m=rec.match(/—\s*([\d.,]+)\s*(kg\/ha|L\/ha|g\/ha|mL\/ha)\s*$/i);
+  const rd=m?num(m[1]):null;const seg=/^s/i.test(String(get(r,'Seguiu')||''));const sub=/^s/i.test(String(get(r,'Substituicao')||''));
+  const ef=/^s/i.test(String(get(r,'Adesao_efetiva')||''));const apl=num(get(r,'Dose_aplicada'));const un=String(get(r,'Unidade')||'');
+  const aplP=String(get(r,'Aplicado')||prod);
+  if(tipo=='nutricao'&&seg){nutSim++;if(/l\/ha/i.test(un))unitNut++;}
+  if(tipo=='acao'&&/\/ha/i.test(un))unitAc++;
+  if(['nutricao','cpd','herb'].includes(tipo)&&seg&&apl==null)add(id,'Média','Execução',`“Seguiu = Sim” sem dose aplicada: ${prod}`);
+  let q=null;if(['nutricao','cpd'].includes(tipo)&&seg&&apl!=null&&rd>0){q=apl/rd;if(q>=3||q<=.34)add(id,'Alta','Execução',`${short(prod,60)}: aplicado ${apl} vs recomendado ${rd} (${Math.round(q*100)}%)`);}
+  if(['nutricao','cpd'].includes(tipo)&&rd===0&&seg)add(id,'Média','Execução',`${prod}: recomendado 0 e marcado como executado`);
+  const fr=F(prod),fa=F(aplP);
+  if(tipo=='nutricao'&&seg&&norm(aplP)!=norm(prod)){const dom=v=>v.indexOf(Math.max(...v));if(Math.max(...fr)>0&&Math.max(...fa)>0&&dom(fr)!=dom(fa))add(id,'Alta','Adesão',`Substituição não equivalente: ${prod} → ${aplP}`);}
+  const rN=tipo=='nutricao'?fr.map(v=>v*(rd||0)):[0,0,0];const aN=tipo=='nutricao'&&seg?fa.map(v=>v*(apl||0)):[0,0,0];
+  return{id,cons:h.cons,mes:h.mes,tipo,prod,rec:rd,apl,seg,sub,ef,q,rN:rN[0],rP:rN[1],rK:rN[2],aN:aN[0],aP:aN[1],aK:aN[2]};});
+ // evidence
+ const ev=withRep(S.Evidencias).map(({r,id,h})=>{const la=num(get(r,'Latitude','Lat')),lo=num(get(r,'Longitude','Lon','Lng'));
+   return{id,h,la,lo,df:pdate(get(r,'DataHora_foto','Data_foto')),k:la!=null&&lo!=null?la.toFixed(3)+','+lo.toFixed(3):null}});
+ const kf={};ev.forEach(e=>{if(e.k)(kf[e.k]=kf[e.k]||new Set()).add(e.h.fazKey)});
+ ev.forEach(e=>{const h=e.h;h.nf++;if(e.k){h.ngps++;if(kf[e.k].size>=3)h.gs++;}
+  if(e.df&&h.dt){const l=Math.max(0,(e.df-h.dt)/864e5);if(h.lag==null||l<h.lag)h.lag=l;}});
+ const hasEv=S.Evidencias.length>0;
+ reps.forEach(r=>{if(!hasEv)return;
+  if(r.nf==0)add(r.id,'Alta','Evidência','Relatório sem nenhuma foto');else if(r.nf<4)add(r.id,'Baixa','Evidência',`Apenas ${r.nf} foto(s)`);
+  if(r.nf>0&&r.ngps==0)add(r.id,'Média','Evidência','Fotos sem geolocalização');
+  if(r.gs>0)add(r.id,'Alta','Evidência','GPS coincide com ponto usado por ≥3 fazendas (upload fora da propriedade)');
+  if(r.lag!=null&&r.lag>15)add(r.id,'Média','Evidência',`Fotos enviadas ${Math.round(r.lag)} dias após a visita`);});
+ reps.forEach(r=>{if(r.N!=null){r.N=+r.N.toFixed(1);r.P=+r.P.toFixed(1);r.K=+r.K.toFixed(1)}});
+ const cons=[...new Set(reps.map(r=>r.cons))].sort();
+ const mo=[...new Set(reps.filter(r=>r.dt).sort((a,b)=>a.mi-b.mi).map(r=>r.mes))];
+ return{reps,obs,ad,cpd:[...cpd,...herb.map(h=>({...h,herb:1}))],iss,cons,meses:mo,hasEv,unit:{nut:unitNut,nutSim,ac:unitAc},cCol:Object.fromEntries(cons.map((c,i)=>[c,PAL[i%PAL.length]]))};
+}
+
+/* ================= UI ================= */
+const TABS=['Visão geral','Adesão','Nutrição','Fitossanidade','Qualidade do dado','Evidências','Plano de ação'];
+$('seg').innerHTML=TABS.map((t,i)=>`<button data-i="${i}">${t}</button>`).join('');
+$('seg').onclick=e=>{if(e.target.dataset.i)go(+e.target.dataset.i)};
+function go(i){document.querySelectorAll('#seg button').forEach((b,j)=>b.classList.toggle('on',i==j));document.querySelectorAll('.tab').forEach((s,j)=>s.classList.toggle('on',i==j));window.scrollTo({top:0,behavior:'smooth'});}
+$('fCons').onchange=$('fMes').onchange=()=>render();
+const flt=a=>a.filter(r=>(!$('fCons').value||r.cons==$('fCons').value)&&(!$('fMes').value||r.mes==$('fMes').value));
+const CH={};
+function mk(id,cfg){if(CH[id])CH[id].destroy();cfg.options=Object.assign({maintainAspectRatio:false,responsive:true},cfg.options||{});CH[id]=new Chart($(id),cfg);}
+const kpi=(l,v,s,col)=>`<div class="kpi"><div class="l">${col?`<span class="dot" style="background:${col}"></span>`:''}${l}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+const hbar=(id,e,color,lbl)=>mk(id,{type:'bar',data:{labels:e.map(x=>short(x[0])),datasets:[{label:lbl||'Ocorrências',data:e.map(x=>x[1]),backgroundColor:color}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{display:true}},y:{grid:{display:false}}}}});
+const stack={x:{stacked:true,grid:{display:false}},y:{stacked:true}};
+const insight=(cls,t,p)=>`<div class="in ${cls}"><b>${t}</b><p>${p}</p></div>`;
+
+// download icons
+const DLSVG='<svg viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>';
+document.querySelectorAll('.card canvas').forEach(cv=>{const card=cv.closest('.card');const b=document.createElement('button');b.className='dl';b.title='Baixar PNG';b.innerHTML=DLSVG;b.onclick=()=>dlChart(cv.id);card.appendChild(b);});
+function slug(s){return norm(s).slice(0,40)||'grafico'}
+function dlChart(id){const ch=CH[id];if(!ch)return;const card=$(id).closest('.card');const title=card.querySelector('h3').textContent,sub=card.querySelector('.sub')?.textContent||'';
+ const sc=2,src=ch.canvas,W=src.width,H=src.height,pad=28*sc,top=78*sc;
+ const c=document.createElement('canvas');c.width=W+pad*2;c.height=H+top+pad;const x=c.getContext('2d');
+ x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+ x.fillStyle='#1d1d1f';x.font=`600 ${20*sc}px -apple-system,"Helvetica Neue",Segoe UI,Arial`;x.fillText(title,pad,pad+18*sc);
+ x.fillStyle='#86868b';x.font=`${13*sc}px -apple-system,"Helvetica Neue",Segoe UI,Arial`;
+ const f=[$('fCons').value,$('fMes').value].filter(Boolean).join(' · ');x.fillText(sub+(f?'  ·  '+f:''),pad,pad+42*sc);
+ x.drawImage(src,pad,top,W,H);
+ const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=slug(title)+(f?'_'+slug(f):'')+'.png';a.click();}
+$('bAll').onclick=async()=>{const vis=[...document.querySelectorAll('.tab.on canvas')].map(c=>c.id);const ids=Object.keys(CH);
+ for(const id of ids){const tab=$(id).closest('.tab');const was=tab.classList.contains('on');if(!was){tab.classList.add('on');CH[id].resize();await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,120)));}dlChart(id);if(!was)tab.classList.remove('on');await new Promise(r=>setTimeout(r,250));}};
+
+/* ================= RENDER ================= */
+function render(){
+ if(!D)return;
+ const R=flt(D.reps),A=flt(D.ad),O=flt(D.obs),P=flt(D.cpd),I=flt(D.iss),cc=D.cons.filter(c=>R.some(r=>r.cons==c)),ms=D.meses.filter(m=>R.some(r=>r.mes==m)),cCol=D.cCol;
+ const dts=R.filter(r=>r.dt).map(r=>r.dt);const d0=dts.length?new Date(Math.min(...dts)):null,d1=dts.length?new Date(Math.max(...dts)):null;
+ $('sub0').textContent=`${R.length} relatórios${d0?` · ${d0.toLocaleDateString('pt-BR')} a ${d1.toLocaleDateString('pt-BR')}`:''}`;
+ const farms=new Set(R.map(r=>r.fazKey)).size;
+ const area=Object.values(Object.fromEntries(R.filter(r=>r.ha).map(r=>[r.fazKey+r.tal,r.ha]))).reduce((a,b)=>a+b,0);
+ const an=A.filter(a=>a.tipo=='nutricao'),ac=A.filter(a=>a.tipo=='cpd');
+ const adN=pct(an.filter(a=>a.ef).length,an.length),adC=pct(ac.filter(a=>a.ef).length,ac.length);
+ const crit=I.filter(i=>i.sev=='Alta').length,gpsOk=R.filter(r=>r.ngps>0&&!r.gs).length;
+ const lags=R.filter(r=>r.lag!=null).map(r=>r.lag),lagM=lags.length?lags.reduce((a,b)=>a+b,0)/lags.length:null;
+ const eN=pct(sum(an,'aN'),sum(an,'rN')),eP=pct(sum(an,'aP'),sum(an,'rP')),eK=pct(sum(an,'aK'),sum(an,'rK'));
+ const qs=A.filter(a=>a.q!=null),q10=pct(qs.filter(a=>a.q>=.9&&a.q<=1.1).length,qs.length);
+ const restr=P.filter(p=>RESTRITOS.some(([re])=>re.test(p.at)));
+ const byM=ms.map(m=>R.filter(r=>r.mes==m).length);
+ const S={R,A,an,ac,adN,adC,crit,gpsOk,lagM,eN,eP,eK,q10,qs,restr,byM,ms,farms,I};
+ // ---- K0
+ $('k0').innerHTML=kpi('Visitas',R.length,`${farms} fazendas · ${cc.length} consultor(es)`)+kpi('Área monitorada',`${fmt(area,0)}<small>ha</small>`,'talhões únicos com área')+
+  kpi('Adesão · nutrição',an.length?`${adN}<small>%</small>`:'–',`${an.length} recomendações`,adN>=90?C.green:adN>=80?C.orange:C.red)+
+  kpi('Adesão · defensivos',ac.length?`${adC}<small>%</small>`:'–',`${ac.length} recomendações`,adC>=85?C.green:adC>=75?C.orange:C.red)+
+  kpi('Pendências críticas',crit,`${I.length} apontamentos no total`,C.red)+
+  (D.hasEv?kpi('Fotos com GPS válido',`${pct(gpsOk,R.length)}<small>%</small>`,'dos relatórios',pct(gpsOk,R.length)>=90?C.green:C.red):'');
+ const ins=[];
+ if(D.hasEv&&pct(gpsOk,R.length)<80)ins.push(insight('r','Evidência pouco auditável',`${100-pct(gpsOk,R.length)}% dos relatórios não têm foto geolocalizada no campo${R.some(r=>r.gs)?'; há coordenadas repetidas em fazendas distintas (upload fora da propriedade)':''}${lagM!=null?`. Envio médio ${fmt(lagM)} dias após a visita.`:'.'}`));
+ if(D.unit.nut>0)ins.push(insight('r','Unidade de execução incorreta no app',`${D.unit.nut} de ${D.unit.nutSim} execuções de fertilizante gravadas em L/ha${D.unit.ac?` e ${D.unit.ac} ações qualitativas com unidade`:''}. Falha de sistema, não de campo.`));
+ if(sum(an,'rN')>0)ins.push(insight(eN<90||eK<90?'o':'g','Entrega de nutrientes',`Entregue ≈ ${eN}% do N, ${eK}% do K₂O e ${eP}% do P₂O₅ recomendados.${(eN<90||eK<90)&&eP>110?' Prioridade invertida: P acima e N/K abaixo, justo no enchimento do conilon.':''}`));
+ if(qs.length)ins.push(insight(q10<80?'o':'g','Precisão de dose',`${q10}% das execuções ficaram em ±10% da dose recomendada (${qs.length} execuções com dose).`));
+ if(byM.length>2){const mx=Math.max(...byM.slice(0,-1)),last=byM[byM.length-2];if(last<mx*.75)ins.push(insight('o','Cobertura em queda',`Visitas caíram de ${mx} para ${last} (${ms[byM.length-2]}). Risco de perder ajustes pós-análise foliar.`));}
+ if(restr.length)ins.push(insight('r','Ativos restritos no receituário',`${restr.length} recomendação(ões) de ${[...new Set(restr.map(r=>r.at))].join(', ')}.`));
+ $('ins0').innerHTML=ins.join('');
+ mk('cVisMes',{type:'bar',data:{labels:ms,datasets:cc.map(c=>({label:c,data:ms.map(m=>R.filter(r=>r.cons==c&&r.mes==m).length),backgroundColor:cCol[c]}))},options:{scales:stack}});
+ hbar('cCat',topN(cnt(O,o=>o.cat)),C.indigo);
+ mk('cCob',{data:{labels:cc,datasets:[{type:'bar',label:'Fazendas',data:cc.map(c=>new Set(R.filter(r=>r.cons==c).map(r=>r.fazKey)).size),backgroundColor:C.blue,yAxisID:'y',order:2},{type:'line',label:'Visitas por fazenda',data:cc.map(c=>{const x=R.filter(r=>r.cons==c);return +(x.length/new Set(x.map(r=>r.fazKey)).size).toFixed(2)}),borderColor:C.orange,backgroundColor:C.orange,tension:.35,pointRadius:5,yAxisID:'y1',order:1}]},options:{scales:{x:{grid:{display:false}},y1:{position:'right',grid:{display:false}}}}});
+ mk('cVer',{type:'bar',data:{labels:cc,datasets:[{label:'Original (v1)',data:cc.map(c=>R.filter(r=>r.cons==c&&r.ver==1).length),backgroundColor:C.gray},{label:'Editado (v2+)',data:cc.map(c=>R.filter(r=>r.cons==c&&r.ver>1).length),backgroundColor:C.orange}]},options:{scales:stack}});
+ // ---- K1
+ const tipos={nutricao:['Nutrição',C.green],cpd:['Defensivos',C.blue],herb:['Herbicidas',C.teal],acao:['Ações de manejo',C.gray]};
+ $('k1').innerHTML=Object.entries(tipos).map(([k,[v,col]])=>{const x=A.filter(a=>a.tipo==k),p=pct(x.filter(a=>a.ef).length,x.length);return kpi(v,x.length?`${p}<small>%</small>`:'–',`${x.length} avaliadas`,col)}).join('')+
+  kpi('Dose em ±10%',qs.length?`${q10}<small>%</small>`:'–',`${qs.length} execuções`)+kpi('Substituições',A.filter(a=>a.sub).length,'produto trocado');
+ mk('cAdTipo',{type:'bar',data:{labels:cc,datasets:Object.entries(tipos).map(([k,[v,col]])=>({label:v,data:cc.map(c=>{const x=A.filter(a=>a.cons==c&&a.tipo==k);return x.length?pct(x.filter(a=>a.ef).length,x.length):null}),backgroundColor:col}))},options:{scales:{x:{grid:{display:false}},y:{max:100,ticks:{callback:v=>v+'%'}}}}});
+ const bins=[['≤50%',-1,.5,C.red],['51–89%',.5,.8999,C.orange],['90–110%',.8999,1.1,C.green],['111–150%',1.1,1.5,C.orange],['151–300%',1.5,3,C.red],['>300%',3,1e9,C.red]];
+ mk('cRazao',{type:'bar',data:{labels:bins.map(b=>b[0]),datasets:[{label:'Execuções',data:bins.map(b=>qs.filter(a=>a.q>b[1]&&a.q<=b[2]).length),backgroundColor:bins.map(b=>b[3])}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}}}}});
+ mk('cEntrega',{type:'bar',data:{labels:['N','P₂O₅','K₂O'],datasets:[{label:'Recomendado',data:[sum(an,'rN'),sum(an,'rP'),sum(an,'rK')].map(Math.round),backgroundColor:C.gray},{label:'Aplicado',data:[sum(an,'aN'),sum(an,'aP'),sum(an,'aK')].map(Math.round),backgroundColor:C.blue}]},options:{scales:{x:{grid:{display:false}}}}});
+ hbar('cNaoExec',topN(cnt(A.filter(a=>!a.seg&&a.tipo!='acao'),a=>a.prod),10),C.red,'Não executado');
+ const byId=Object.fromEntries(D.reps.map(r=>[r.id,r]));
+ const dv=qs.filter(a=>a.q>=1.5||a.q<=.5).sort((a,b)=>b.q-a.q);
+ $('tbDesv').innerHTML='<tr><th>Fazenda</th><th>Consultor</th><th>Mês</th><th>Produto</th><th>Recom.</th><th>Aplicado</th><th>Razão</th></tr>'+(dv.length?dv.map(a=>`<tr><td>${esc(byId[a.id]?.faz)}</td><td>${esc(a.cons)}</td><td>${a.mes}</td><td>${esc(short(a.prod,70))}</td><td>${fmt(a.rec,2)}</td><td>${fmt(a.apl,2)}</td><td><span class="pill ${a.q>=3||a.q<=.34?'Alta':'Média'}">${Math.round(a.q*100)}%</span></td></tr>`).join(''):'<tr><td colspan="7">Nenhum desvio relevante.</td></tr>');
+ // ---- K2
+ const RN=R.filter(r=>r.N!=null),kn=RN.filter(r=>r.N>0).map(r=>r.K/r.N),knm=med(kn);
+ $('k2').innerHTML=kpi('Relatórios com recomendação',RN.length,`de ${R.length} visitas`)+kpi('N médio',`${fmt(avg(RN,'N'))}<small>kg/ha</small>`,'por relatório',C.green)+
+  kpi('K₂O médio',`${fmt(avg(RN,'K'))}<small>kg/ha</small>`,'por relatório',C.indigo)+kpi('P₂O₅ médio',`${fmt(avg(RN,'P'))}<small>kg/ha</small>`,'por relatório',C.orange)+
+  kpi('K₂O : N (mediana)',kn.length?fmt(knm,2):'–','referência conilon ≈ 1,0–1,3 no enchimento',knm>=1?C.green:C.orange)+kpi('Visitas com K₂O:N < 0,6',RN.filter(r=>r.N>0&&r.K/r.N<.6).length,'risco de desequilíbrio',C.red);
+ const mx=Math.max(50,...RN.map(r=>Math.max(r.N,r.K)));
+ mk('cNK',{type:'scatter',data:{datasets:[...cc.map(c=>({label:c,data:RN.filter(r=>r.cons==c).map(r=>({x:r.N,y:r.K,f:r.faz,m:r.mes})),backgroundColor:cCol[c]+'b3',pointRadius:5,pointHoverRadius:7})),{type:'line',label:'1:1',data:[{x:0,y:0},{x:mx,y:mx}],borderColor:'#c7c7cc',borderDash:[6,6],borderWidth:1.5,pointRadius:0}]},options:{scales:{x:{title:{display:true,text:'N (kg/ha)'}},y:{title:{display:true,text:'K₂O (kg/ha)'}}},plugins:{tooltip:{callbacks:{label:c=>c.raw.f?`${c.raw.f} · ${c.raw.m} · N ${c.raw.x} | K₂O ${c.raw.y}`:''}}}}});
+ hbar('cDef',topN(cnt(O,o=>o.df)),C.orange,'Menções');
+ mk('cNPKm',{type:'bar',data:{labels:ms,datasets:[['N','N',C.green],['P₂O₅','P',C.orange],['K₂O','K',C.indigo]].map(([l,k,c])=>({label:l,data:ms.map(m=>+avg(RN.filter(r=>r.mes==m),k).toFixed(1)),backgroundColor:c}))},options:{scales:{x:{grid:{display:false}}}}});
+ hbar('cFert',topN(cnt(an,a=>a.prod),12),C.green,'Recomendações');
+ // ---- K3
+ const pc=cnt(O,o=>o.pr);
+ $('k3').innerHTML=kpi('Registros de pragas/doenças',O.filter(o=>/praga|doen/i.test(o.cat)).length,'linhas de observação')+
+  topN(pc,3).map(([k,v])=>kpi(k,v,'menções',C.orange)).join('')+kpi('Ativos restritos',restr.length,`${new Set(restr.map(r=>r.id)).size} relatórios`,restr.length?C.red:C.green);
+ const i3=[];
+ if(restr.length)i3.push(insight('r','Ativo restrito no receituário',RESTRITOS.filter(([re])=>restr.some(p=>re.test(p.at))).map(x=>x[1]).join('. ')+'. Substituir por alternativas registradas com rotação de modo de ação (IRAC).'));
+ const cuP=P.filter(p=>/cobre|bifentrin|cipermetrin|lambda|deltametrin/i.test(p.at)).length;
+ if((pc['Ácaro-vermelho']||0)>0&&cuP>0)i3.push(insight('o','Ácaro × cobre e piretroides',`${cuP} recomendações de cobre/piretroides com ${pc['Ácaro-vermelho']} menções de ácaro-vermelho. Esses produtos eliminam predadores (Phytoseiidae) e favorecem surtos; priorizar controle em reboleira e monitoramento.`));
+ const bad=P.filter(p=>p.d>=20);if(bad.length)i3.push(insight('o','Doses implausíveis',`${bad.length} registro(s), ex.: ${bad.slice(0,3).map(b=>`${b.at} ${b.d} ${b.u}`).join('; ')}. Provável erro mL→L ou g→kg.`));
+ $('ins3').innerHTML=i3.join('');
+ hbar('cPrag',topN(pc),C.brown,'Menções');
+ const at=topN(cnt(P,p=>p.at),14);hbar('cAtiv',at,at.map(e=>RESTRITOS.some(([re])=>re.test(e[0]))?C.red:C.blue),'Recomendações');
+ // ---- K4
+ const sev=['Alta','Média','Baixa'],sc={Alta:C.red,Média:C.orange,Baixa:C.gray};
+ $('k4').innerHTML=kpi('Apontamentos',I.length,`${new Set(I.map(i=>i.id)).size} relatórios afetados`)+sev.map(s=>kpi('Severidade '+s.toLowerCase(),I.filter(i=>i.sev==s).length,'',sc[s])).join('')+
+  kpi('Sem pendência crítica',`${pct(R.filter(r=>!I.some(i=>i.id==r.id&&i.sev=='Alta')).length,R.length)}<small>%</small>`,'dos relatórios',C.green);
+ const i4=[];if(D.unit.nut)i4.push(insight('r','Erro sistêmico de unidade',`${D.unit.nut}/${D.unit.nutSim} execuções de fertilizantes em L/ha${D.unit.ac?` e ${D.unit.ac} ações com unidade`:''}. Não listado linha a linha por ser falha do app.`));
+ const c0=I.filter(i=>i.tipo=='Cálculo').length;if(c0)i4.push(insight('o','Cálculo de nutrientes',`${c0} formulados aplicados com N-P-K = 0 – subestima a entrega real.`));
+ $('ins4').innerHTML=i4.join('');
+ const tt=[...new Set(I.map(i=>i.tipo))].sort((a,b)=>I.filter(i=>i.tipo==b).length-I.filter(i=>i.tipo==a).length);
+ mk('cIssT',{type:'bar',data:{labels:tt,datasets:sev.map(s=>({label:s,data:tt.map(t=>I.filter(i=>i.tipo==t&&i.sev==s).length),backgroundColor:sc[s]}))},options:{indexAxis:'y',scales:{x:{stacked:true},y:{stacked:true,grid:{display:false}}}}});
+ mk('cIssC',{type:'bar',data:{labels:cc,datasets:sev.map(s=>({label:s,data:cc.map(c=>+(I.filter(i=>i.cons==c&&i.sev==s).length/Math.max(1,R.filter(r=>r.cons==c).length)).toFixed(2)),backgroundColor:sc[s]}))},options:{scales:stack}});
+ const cur=$('tIss').value;$('tIss').innerHTML='<option value="">Todos os tipos</option>'+[...tt].sort().map(t=>`<option ${t==cur?'selected':''}>${t}</option>`).join('');
+ drawIss();
+ // ---- K5
+ if(!D.hasEv){$('k5').innerHTML='<div class="note">Aba “Evidencias” não encontrada nesta planilha.</div>';}
+ else{
+ $('k5').innerHTML=kpi('Fotos por relatório',fmt(avg(R,'nf')),'média')+kpi('Sem fotos',R.filter(r=>r.nf==0).length,'relatórios',C.red)+
+  kpi('GPS válido',`${pct(gpsOk,R.length)}<small>%</small>`,'no campo',C.green)+kpi('GPS suspeito',R.filter(r=>r.gs>0).length,'ponto repetido em ≥3 fazendas',C.orange)+
+  kpi('Envio > 15 dias',R.filter(r=>r.lag>15).length,lagM!=null?`média ${fmt(lagM)} dias`:'',C.red);}
+ mk('cGps',{type:'bar',data:{labels:cc,datasets:[['GPS válido',r=>r.ngps>0&&!r.gs,C.green],['GPS suspeito',r=>r.gs>0,C.orange],['Sem GPS',r=>r.ngps==0,C.red]].map(([l,f,c])=>({label:l,data:cc.map(x=>{const y=R.filter(r=>r.cons==x);return pct(y.filter(f).length,y.length)}),backgroundColor:c}))},options:{scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+ const lb=[['0–2 d',-1e9,2],['3–7 d',2,7],['8–15 d',7,15],['16–30 d',15,30],['> 30 d',30,1e9]];
+ mk('cLag',{type:'bar',data:{labels:lb.map(b=>b[0]),datasets:cc.map(c=>({label:c,data:lb.map(b=>R.filter(r=>r.cons==c&&r.lag!=null&&r.lag>b[1]&&r.lag<=b[2]).length),backgroundColor:cCol[c]}))},options:{scales:stack}});
+ plano(S);
+}
+let rows=[];
+function drawIss(){const q=$('qIss').value.toLowerCase(),s=$('sIss').value,t=$('tIss').value,o={Alta:0,Média:1,Baixa:2};
+ rows=flt(D.iss).filter(i=>(!s||i.sev==s)&&(!t||i.tipo==t)&&(!q||(i.faz+i.tipo+i.det+i.cons).toLowerCase().includes(q))).sort((a,b)=>o[a.sev]-o[b.sev]);
+ $('tbIss').innerHTML='<tr><th>Severidade</th><th>Tipo</th><th>Fazenda</th><th>Consultor</th><th>Mês</th><th>Detalhe</th></tr>'+rows.slice(0,1500).map(i=>`<tr><td><span class="pill ${i.sev}">${i.sev}</span></td><td>${i.tipo}</td><td>${esc(i.faz)}</td><td>${esc(i.cons)}</td><td>${i.mes}</td><td>${esc(i.det)}</td></tr>`).join('');}
+$('qIss').oninput=$('sIss').onchange=$('tIss').onchange=drawIss;
+$('bCsv').onclick=()=>{const h='Severidade;Tipo;Fazenda;Consultor;Mes;Relatorio;Detalhe\n';const b=rows.map(i=>[i.sev,i.tipo,i.faz,i.cons,i.mes,i.id,i.det].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+h+b],{type:'text/csv'}));a.download='inconsistencias.csv';a.click();};
+
+function plano(S){
+ const {R,I}=S;const n=t=>I.filter(i=>i.tipo==t).length;const pa=[];
+ if(D.unit.nut||n('Cálculo'))pa.push(['Corrigir unidade de execução no app (kg/ha para sólidos) e o cálculo N-P-K dos formulados',`${D.unit.nut} execuções em L/ha; ${n('Cálculo')} formulados com NPK = 0`,'Admin do app','7 dias','Trava de unidade por tipo de produto; reprocessar histórico','0 registros incoerentes']);
+ if(n('Defensivos')||S.qs.length&&S.q10<85)pa.push(['Travas de plausibilidade de dose e alerta para ≥150% / ≤50% do recomendado',`${S.q10}% das execuções em ±10%; ${I.filter(i=>/implaus/.test(i.det)).length} doses implausíveis`,'Admin do app + Coordenação','15 dias','Faixa mín./máx. por produto; justificativa obrigatória fora da faixa','≥85% em ±10%']);
+ if(D.hasEv&&pct(S.gpsOk,R.length)<95)pa.push(['Evidência obrigatória no campo: ≥4 fotos com GPS capturadas no app',`${pct(S.gpsOk,R.length)}% com GPS válido; envio médio ${S.lagM!=null?fmt(S.lagM):'–'} dias`,'Coordenação + Consultores','30 dias','Captura nativa; bloqueio de envio sem GPS; geofence por fazenda','≥95% com GPS; envio ≤48 h']);
+ if(n('Cadastro')||n('Unidade'))pa.push(['Cadastro completo e doses sempre em kg/ha',`${n('Cadastro')} pendências de cadastro; ${n('Unidade')} doses por talhão/setor`,'Consultores','15 dias','Campos obrigatórios + checklist de envio + treinamento de 1 h','0 relatórios incompletos']);
+ if(S.an.length&&(S.eN<90||S.eK<90))pa.push(['Recompor N e K₂O na fase de chumbinho/expansão e conter excesso de P',`Entregue ${S.eN}% N · ${S.eK}% K₂O · ${S.eP}% P₂O₅`,'Consultores + Produtores','Próxima visita','Redistribuir saldo não aplicado nos parcelamentos seguintes; fertirrigação semanal','≥90% de N e K₂O']);
+ if(n('Adesão'))pa.push(['Substituições apenas com equivalência nutricional validada',`${n('Adesão')} substituição(ões) não equivalente(s)`,'Consultores','30 dias','Campo “substituto” com cálculo automático de N-P-K equivalente','100% validadas']);
+ if(S.restr.length)pa.push(['Retirar ativos restritos do receituário e revisar MIP',`${S.restr.length} recomendações restritas`,'Coordenação técnica','Imediato','Lista de bloqueio no app; protocolo por praga com rotação IRAC','0 ativos restritos']);
+ if(n('Irrigação')||S.R.length&&flt(D.obs).some(o=>/irriga|entup/i.test(o.cat)))pa.push(['Irrigação como pré-condição da fertirrigação',`${flt(D.obs).filter(o=>/irriga|entup|água/i.test(o.cat)).length} ocorrências de irrigação; ${n('Irrigação')} unidades incoerentes`,'Consultores + Produtores','45 dias','Teste de uniformidade padronizado (bar, CUD, CV de vazão)','CUD ≥80% nos setores críticos']);
+ if(S.byM.length>2)pa.push(['Recuperar cobertura e intervalo entre visitas',`Visitas/mês: ${S.ms.map((m,i)=>m+' '+S.byM[i]).join(' · ')}`,'Coordenação','30 dias','Agenda por rota; painel de dias desde a última visita','≤35 dias entre visitas']);
+ pa.push(['Rotina quinzenal de gestão com este painel','Garantir que os indicadores virem ação','Coordenação','Quinzenal','15 min por consultor, foco em processo e casos; devolutiva ao produtor com 3 prioridades','≤5% com pendência crítica']);
+ $('tbPA').innerHTML='<tr><th>#</th><th>O quê</th><th>Por quê</th><th>Quem</th><th>Quando</th><th>Como</th><th>Meta</th></tr>'+pa.map((r,i)=>`<tr><td><b>${i+1}</b></td>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+ const crPct=pct(R.filter(r=>I.some(i=>i.id==r.id&&i.sev=='Alta')).length,R.length);
+ const M=[['Adesão efetiva · nutrição',S.an.length?S.adN+'%':'–','≥ 90%',S.adN>=90],['Adesão efetiva · defensivos',S.ac.length?S.adC+'%':'–','≥ 85%',S.adC>=85],['Dose em ±10%',S.qs.length?S.q10+'%':'–','≥ 85%',S.q10>=85],
+  ['Entrega de N / K₂O',S.an.length?`${S.eN}% / ${S.eK}%`:'–','≥ 90%',S.eN>=90&&S.eK>=90],['GPS válido',D.hasEv?pct(S.gpsOk,R.length)+'%':'–','≥ 95%',pct(S.gpsOk,R.length)>=95],
+  ['Envio após visita',S.lagM!=null?fmt(S.lagM)+' d':'–','≤ 2 d',S.lagM!=null&&S.lagM<=2],['Relatórios com pendência crítica',crPct+'%','≤ 5%',crPct<=5],['Ativos restritos',S.restr.length,'0',!S.restr.length]];
+ $('tbMeta').innerHTML='<tr><th>Indicador</th><th>Atual</th><th>Meta</th><th>Status</th></tr>'+M.map(m=>`<tr><td>${m[0]}</td><td><b>${m[1]}</b></td><td>${m[2]}</td><td><span class="dot" style="background:${m[3]?C.green:C.red}"></span>${m[3]?'Na meta':'Fora da meta'}</td></tr>`).join('');
+}
+</script>
+</body>
+</html>
